@@ -1,12 +1,282 @@
 <!DOCTYPE html>
 <html lang="en" xmlns="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/dadmain.css}" />
+    <link rel="stylesheet" type="text/css" th:href="@{/hello.css}" />
+    <link rel="stylesheet" type="text/css" th:href="@{/kanban.min.css}" />
+    <!-- <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"> -->
+    <style>
+        .date-range-container {
+            display: flex;
+            justify-content: space-between;
+            max-width: 300px;
+            margin: 20px;
+        }
+    </style>
 </head>
+
 <body>
+
     <div th:replace="/fragments/header :: header"></div>
+
+    <div th:replace="/body/main :: main"></div>
+
     <div th:replace="/fragments/footer :: footer"></div>
+
+    <script th:src="@{jquery.min.js}"></script>
+    <script th:src="@{kanban.js}"></script>
+
+    <!-- <script th:src="@{dragula.js}"></script> -->
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script th:inline="javascript">
+
+        $(document).ready(function () {
+
+            let list = [];
+
+            function kanban() {
+
+                $('#kanban').empty();
+                $('#kanban').kanban({
+                    titles: ['Task', 'In progress', 'Complete'],
+                    colours: ['#00aaff', '#ff921d', '#00ff40'],
+                    items: list
+                });
+            }
+
+            $(document).on('drop', '.cd_kanban_board_block', function(event, ui) {
+                // Get the dropped item's ID
+                let itemId = ui.helper.data('item-id');
+            
+                // Find the item in the list array based on its ID
+                let droppedItem = list.find(item => item.id === itemId);
+            
+                // Update the item's block based on the drop target
+                let dropTarget = $(this).data('block');
+                droppedItem.block = dropTarget;
+            
+                // Log the updated list to the console
+                console.log(list);
+            
+                // Update the kanban board
+                kanban();
+            });
+
+
+            $(document).on('click', '#addtask', function () {
+                let title = $("#title").val();
+                let description = $("#description").val();
+                list.push({
+                    id: 100,
+                    title: `${title}`,
+                    block: 'Task',
+                    footer: `<i class="ion-md-chatboxes"></i><div class="pull-right"><i class="ion-md-checkbox"></i> ${description}</div>`
+                });
+                console.log(list)
+                $("#description").val("");
+                $("#title").val("");
+                kanban()
+            })
+
+            $(document).off('click', "#kanbanbutton").on('click', "#kanbanbutton", function () {
+                fetch(`/api/task`) // Assuming there is a server endpoint that returns the HTML content of the home page
+                    .then(response => response.json()) // Use text() instead of json() for HTML content
+                    .then(data => {
+                        // Set the fetched HTML as the innerHTML of the app element
+                        data.forEach(item => {
+                            if (!list.some(existingItem => existingItem.id === item.id)) {
+                                list.push(item);
+                            }
+                        });
+                        kanban();
+                    })
+                    .catch(error => console.error('Error fetching data:', error));
+            })
+
+            $(document).on('drop', '[data-id=1]', function() {
+                // Get the dropped item's ID
+                let itemId = $(this).attr('data-item-id');
+            
+                // Find the item in the list array based on its ID
+                let droppedItem = list.find(item => item.id === itemId);
+            
+                // Update the item's block based on the drop target
+                let dropTarget = $(this).attr('data-block');
+                droppedItem.block = dropTarget;
+            
+                // Log the updated list to the console
+                console.log(list);
+            
+                // Update the kanban board
+                kanban();
+            });
+
+
+            $(document).on("dblclick", "#editableText", function () {
+                var text = $(this).text();
+
+                // Replace the <p> element with an <input> element
+                $(this).replaceWith(`<input type="text" id="editableText" value="${text}">`);
+
+                // Display the submit button
+                $("#changetexttoinput").show();
+            });
+
+            /* Custom Dragula JS */
+            /*var options = {
+                removeOnSpill: false
+            };
+
+            var containers = [
+                $("#to-do"),
+                $("#doing"),
+                $("#done"),
+                $("#trash")
+            ];
+
+            var drake = dragula(containers, options);
+
+            drake.on("drag", function (el) {
+                $(el).removeClass("ex-moved");
+            });
+
+            drake.on("drop", function (el) {
+                $(el).addClass("ex-moved");
+            });
+
+            drake.on("over", function (el, container) {
+                $(container).addClass("ex-over");
+            });
+
+            drake.on("out", function (el, container) {
+                $(container).removeClass("ex-over");
+            });*/
+
+            /* Vanilla JS to add a new task */
+            //$(document).on("click", "#add", function () {
+            /* Get task text from input */
+            //var inputTask = document.getElementById("taskText").value;
+            /* Add task to the 'To Do' column */
+            //document.getElementById("to-do").innerHTML +=
+            //"<li class='task'><p>" + inputTask + "</p></li>";
+            /* Clear task text from input after adding task */
+            //document.getElementById("taskText").value = "";
+            //})
+
+            /* Vanilla JS to delete tasks in 'Trash' column */
+            //$(document).on("click", "#emptyTrashButton", function () {
+            /* Clear tasks from 'Trash' column */
+            //document.getElementById("trash").innerHTML = "";
+            // })
+
+            $(document).on("click", "#button", function () {
+                // Get the values of the start and end date inputs using jQuery
+                var startDate = new Date($("input[name='data_range_from[]']").val());
+                var endDate = new Date($("input[name='data_range_to[]']").val());
+
+                if (startDate > endDate) {
+                    alert("Start date must be before end date.");
+                    return;
+                }
+
+                var weekendCount = 0;
+
+                // Iterate through each day
+                while (startDate <= endDate) {
+                    // Check if the current day is a weekend (Saturday or Sunday)
+                    if (startDate.getDay() === 0 || startDate.getDay() === 6) {
+                        weekendCount++;
+                    }
+
+                    // Move to the next day
+                    startDate.setDate(startDate.getDate() + 1);
+                }
+
+                // Display the values (you can modify this part based on your requirements)
+                console.log("start date : " + startDate + ", end date : " + endDate + ", weekend count : " + weekendCount)
+            });
+
+            Pusher.logToConsole = true;
+            var pusher = new Pusher('cd7cdc2857a652669f6c', {
+                cluster: 'ap1'
+            });
+
+            var channel = pusher.subscribe('my-channel');
+
+            channel.bind('my-event', function (data) {
+
+                var object = JSON.parse(data);
+                var comment = object.comment;
+
+                console.log(comment);
+
+                $(".comment-container").append(
+                    '<div class="about-comment">' +
+                    comment +
+                    "</div>"
+                );
+
+            })
+            $(document).on("click", "#sendButton", function () {
+
+                let commentText = $("#comments").val();
+                let trimtext = $.trim(commentText);
+
+                $.ajax({
+                    url: '/livecomment',
+                    contentType: 'application/json',
+                    method: "POST",
+                    data: JSON.stringify({ comment: trimtext }),
+                    success: function (response) {
+                        $("#comments").val("");
+                    }
+                })
+
+            })
+            $(document).on("click", "#submitButton", function () {
+                console.log("hi guys");
+                var value = $("#hello").val();
+
+                $.ajax({
+                    method: "POST",
+                    url: "/help",
+                    data: { hello: value },
+                    success: function (response) {
+                        console.log(response);
+                        $("#hello").val("");
+                        $("#thisisnice").val(response);
+                    },
+                    error: function (error) {
+                        console.error('Error submitting the data:', error);
+                    }
+                });
+            });
+
+            // Function to load content based on the clicked link
+            $("a").click(function (event) {
+                event.preventDefault(); // Prevent the default link behavior
+
+                // Get the href attribute of the clicked link
+                const appElement = document.getElementById('main-content');
+                var hrefValue = $(this).attr('href');
+
+                // Example: Fetch dynamic content from the server
+                fetch(`/api/${hrefValue}`) // Assuming there is a server endpoint that returns the HTML content of the home page
+                    .then(response => response.text()) // Use text() instead of json() for HTML content
+                    .then(html => {
+                        // Set the fetched HTML as the innerHTML of the app element
+                        appElement.innerHTML = html;
+                    })
+                    .catch(error => console.error('Error fetching data:', error));
+            });
+        });
+
+    </script>
 </body>
+
 </html>
