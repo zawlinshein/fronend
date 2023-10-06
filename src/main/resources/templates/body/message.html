@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <script src="https://code.jquery.com/jquery-3.6.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <style>
+    
+    .date-range-container {
+        display: flex;
+        justify-content: space-between;
+        max-width: 300px;
+        margin: 20px;
+      }
+    </style>
+</head>
+<body>
+    <div class="comment-container"></div>
+    <textarea id="comments" cols="30" rows="10"></textarea>
+    <button id="sendButton">send</button>
+	<input type="date" name="data_range_from[]"> to <input type="date" name="data_range_to[]"><br>
+	<button id="button">click</button>
+    <div class="date-range-container">
+  <label for="date-range">Select Date Range:</label>
+  <input type="text" id="date-range">
+</div>
+    <!-- <script th:src="@{jquery.min.js}"></script>
+    
+    <script>
+        $(document).ready(function() {
+
+			
+        })
+    </script> -->
+    <script>
+        $(function() {
+          $("#date-range").datepicker({
+            numberOfMonths: 4,
+            onSelect: function(selectedDate) {
+              var option = this.id === "date-range" ? "minDate" : "maxDate",
+                instance = $(this).data("datepicker"),
+                date = $.datepicker.parseDate(instance.settings.dateFormat || $.datepicker._defaults.dateFormat, selectedDate, instance.settings);
+      
+              $("#date-range").not(this).datepicker("option", option, date);
+              console.log(option)
+            }
+          });
+          
+        });
+      </script>
+      
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .section {
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 30%;
+            min-height: 200px;
+            box-sizing: border-box;
+        }
+
+        .task {
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            padding: 8px;
+            margin: 8px 0;
+            cursor: grab;
+        }
+        .dragging {
+            background-color: lightblue;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Task Tracker</h1>
+
+    <div class="container">
+        <div class="section" id="todo-section" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h2>To Do</h2>
+            
+            <!-- Add more tasks as needed -->
+        </div>
+
+        <div class="section" id="progress-section" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h2>In Progress</h2>
+            <!-- Add tasks in progress here -->
+        </div>
+
+        <div class="section" id="done-section" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h2>Done</h2>
+            <!-- Add completed tasks here -->
+        </div>
+    </div>
+    <input type="text" id="taskNameInput" placeholder="Task Name">
+<input type="date" id="taskDueDateInput" placeholder="Due Date">
+<input type="date" id="taskStartDateInput" placeholder="Start Date">
+    <input type="text" id="taskDescription" placeholder="description">
+    <button onclick="addNewTask()">Add New Task</button>
+
+    <script>
+
+        function addNewTask() {
+            // Get input values
+            var taskDescription = document.getElementById("taskDescription").value;
+            var taskName = document.getElementById("taskNameInput").value;
+            var taskDueDate = document.getElementById("taskDueDateInput").value;
+            var taskStartDate = document.getElementById("taskStartDateInput").value;
+        
+            // Validate input
+            if (!taskName || !taskDueDate || !taskStartDate || !taskDescription) {
+                alert("Please fill in all fields");
+                return;
+            }
+        
+            // Get the current date
+            var currentDate = new Date().toISOString().split('T')[0];
+        
+            // Validate start date
+            if (taskStartDate < currentDate) {
+                alert("Start date can't be earlier than the current date");
+                return;
+            }
+        
+            // Validate end date
+            if (taskDueDate < currentDate || taskDueDate < taskStartDate) {
+                alert("Due date can't be earlier than the current date or start date");
+                return;
+            }
+        
+            // Calculate actual hours (1 day = 6 hours, excluding weekends)
+            var startDate = new Date(taskStartDate);
+            var dueDate = new Date(taskDueDate);
+            var totalDays = Math.floor((dueDate - startDate) / (24 * 60 * 60 * 1000)) + 1;
+            var actualHours = totalDays * 6; // 1 day = 6 hours
+        
+            // Exclude weekends (assuming Saturday and Sunday are weekends)
+            for (var i = 0; i <= totalDays; i++) {
+                var currentDate = new Date(startDate);
+                currentDate.setDate(startDate.getDate() + i);
+        
+                // Exclude weekends
+                if (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
+                    actualHours -= 6; // Subtract 6 hours for each weekend day
+                }
+            }
+        
+            // Create a Task object
+            var taskObject = {
+                title: taskName,
+                description: taskDescription, // Add description logic if needed
+                status: "BEFORE",      // Add status logic if needed
+                start: taskStartDate,
+                end: taskDueDate,
+                actual: actualHours,
+                expected: 0   // Add expected logic if needed
+            };
+        
+            // Create new task element
+            var newTask = document.createElement("div");
+            newTask.className = "task";
+            newTask.draggable = true;
+        
+            // Set task content
+            newTask.innerHTML = `
+                <strong>Name:</strong> ${taskObject.title} <br>
+                <strong>Due Date:</strong> ${taskObject.end} <br>
+                <strong>Start Date:</strong> ${taskObject.start} <br>
+                <strong>Actual Hours:</strong> ${taskObject.actual} hours
+            `;
+        
+            newTask.setAttribute("ondragstart", "drag(event)");
+        
+            // Append the new task to the todo-section
+            var todoSection = document.getElementById("todo-section");
+            todoSection.appendChild(newTask);
+        
+            // Send the task data to the backend using Fetch API
+            fetch('/api/task/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(taskObject),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function drag(event) {
+            var sourceSection = event.target.closest('.section');
+
+            if (sourceSection) {
+                var sourceId = sourceSection.id;
+                event.dataTransfer.setData("text", event.target.innerText);
+                event.dataTransfer.setData("sourceId", sourceId);
+                event.dataTransfer.setData("draggedElement", event.target.outerHTML);
+
+                event.target.classList.add("dragging");
+            } else {
+                console.log("Could not find the closest section.");
+            }
+        }
+              
+
+        function drop(event) {
+            event.preventDefault();
+            var data = event.dataTransfer.getData("text");
+            var sourceId = event.dataTransfer.getData("sourceId");
+            console.log("Source ID:", sourceId);
+
+            var draggedTask = document.querySelector(".dragging");
+
+            if (!draggedTask) {
+                console.log("Dragged task not found.");
+                return;
+            }
+
+            var clonedTask = draggedTask.cloneNode(true);
+
+            clonedTask.classList.remove("dragging");
+
+            if (event.target.classList.contains("task")) {
+                var dropSection = event.target.closest(".section");
+                var dropIndex = Array.from(dropSection.children).indexOf(event.target);
+
+                dropSection.insertBefore(clonedTask, dropIndex > -1 ? dropSection.children[dropIndex] : null);
+
+                var sourceSection = document.getElementById(sourceId);
+                sourceSection.removeChild(draggedTask);
+
+                return;
+            }
+
+            if (event.target.classList.contains("section") && !event.target.classList.contains("title")) {
+                event.target.appendChild(clonedTask);
+
+                var sourceSection = document.getElementById(sourceId);
+                sourceSection.removeChild(draggedTask);
+            }
+        }
+        
+
+    </script>
+
+</body>
+</html>
