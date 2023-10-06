@@ -84,10 +84,9 @@
             })
 
             $(document).off('click', "#kanbanbutton").on('click', "#kanbanbutton", function () {
-                fetch(`/api/task`) // Assuming there is a server endpoint that returns the HTML content of the home page
-                    .then(response => response.json()) // Use text() instead of json() for HTML content
+                fetch(`/api/task`) 
+                    .then(response => response.json()) 
                     .then(data => {
-                        // Set the fetched HTML as the innerHTML of the app element
                         data.forEach(item => {
                             if (!list.some(existingItem => existingItem.id === item.id)) {
                                 list.push(item);
@@ -99,20 +98,15 @@
             })
 
             $(document).on('drop', '[data-id=1]', function() {
-                // Get the dropped item's ID
                 let itemId = $(this).attr('data-item-id');
             
-                // Find the item in the list array based on its ID
                 let droppedItem = list.find(item => item.id === itemId);
             
-                // Update the item's block based on the drop target
                 let dropTarget = $(this).attr('data-block');
                 droppedItem.block = dropTarget;
             
-                // Log the updated list to the console
                 console.log(list);
             
-                // Update the kanban board
                 kanban();
             });
 
@@ -120,62 +114,12 @@
             $(document).on("dblclick", "#editableText", function () {
                 var text = $(this).text();
 
-                // Replace the <p> element with an <input> element
                 $(this).replaceWith(`<input type="text" id="editableText" value="${text}">`);
 
-                // Display the submit button
                 $("#changetexttoinput").show();
             });
 
-            /* Custom Dragula JS */
-            /*var options = {
-                removeOnSpill: false
-            };
-
-            var containers = [
-                $("#to-do"),
-                $("#doing"),
-                $("#done"),
-                $("#trash")
-            ];
-
-            var drake = dragula(containers, options);
-
-            drake.on("drag", function (el) {
-                $(el).removeClass("ex-moved");
-            });
-
-            drake.on("drop", function (el) {
-                $(el).addClass("ex-moved");
-            });
-
-            drake.on("over", function (el, container) {
-                $(container).addClass("ex-over");
-            });
-
-            drake.on("out", function (el, container) {
-                $(container).removeClass("ex-over");
-            });*/
-
-            /* Vanilla JS to add a new task */
-            //$(document).on("click", "#add", function () {
-            /* Get task text from input */
-            //var inputTask = document.getElementById("taskText").value;
-            /* Add task to the 'To Do' column */
-            //document.getElementById("to-do").innerHTML +=
-            //"<li class='task'><p>" + inputTask + "</p></li>";
-            /* Clear task text from input after adding task */
-            //document.getElementById("taskText").value = "";
-            //})
-
-            /* Vanilla JS to delete tasks in 'Trash' column */
-            //$(document).on("click", "#emptyTrashButton", function () {
-            /* Clear tasks from 'Trash' column */
-            //document.getElementById("trash").innerHTML = "";
-            // })
-
             $(document).on("click", "#button", function () {
-                // Get the values of the start and end date inputs using jQuery
                 var startDate = new Date($("input[name='data_range_from[]']").val());
                 var endDate = new Date($("input[name='data_range_to[]']").val());
 
@@ -186,18 +130,14 @@
 
                 var weekendCount = 0;
 
-                // Iterate through each day
                 while (startDate <= endDate) {
-                    // Check if the current day is a weekend (Saturday or Sunday)
                     if (startDate.getDay() === 0 || startDate.getDay() === 6) {
                         weekendCount++;
                     }
 
-                    // Move to the next day
                     startDate.setDate(startDate.getDate() + 1);
                 }
 
-                // Display the values (you can modify this part based on your requirements)
                 console.log("start date : " + startDate + ", end date : " + endDate + ", weekend count : " + weekendCount)
             });
 
@@ -257,19 +197,15 @@
                 });
             });
 
-            // Function to load content based on the clicked link
             $("a").click(function (event) {
-                event.preventDefault(); // Prevent the default link behavior
+                event.preventDefault(); 
 
-                // Get the href attribute of the clicked link
                 const appElement = document.getElementById('main-content');
                 var hrefValue = $(this).attr('href');
 
-                // Example: Fetch dynamic content from the server
-                fetch(`/api/${hrefValue}`) // Assuming there is a server endpoint that returns the HTML content of the home page
-                    .then(response => response.text()) // Use text() instead of json() for HTML content
+                fetch(`/api/${hrefValue}`) 
+                    .then(response => response.text()) 
                     .then(html => {
-                        // Set the fetched HTML as the innerHTML of the app element
                         appElement.innerHTML = html;
                     })
                     .catch(error => console.error('Error fetching data:', error));
