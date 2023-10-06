@@ -61,7 +61,7 @@
                 droppedItem.block = dropTarget;
             
                 // Log the updated list to the console
-                console.log(list);
+                console.log(list);  
             
                 // Update the kanban board
                 kanban();
@@ -84,7 +84,7 @@
             })
 
             $(document).off('click', "#kanbanbutton").on('click', "#kanbanbutton", function () {
-                fetch(`/api/task`) 
+                fetch(`/api/tasklist`) 
                     .then(response => response.json()) 
                     .then(data => {
                         data.forEach(item => {

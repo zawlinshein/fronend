@@ -9,7 +9,9 @@ import org.eclipse.jdt.internal.compiler.batch.Main;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.servlet.http.HttpSession;
 
+import com.example.ajax.fronend.dto.STaskDto;
 import com.example.ajax.fronend.dto.TaskDto;
 import com.example.ajax.fronend.entity.Message;
 import com.example.ajax.fronend.entity.Task;
@@ -85,6 +88,29 @@ public class MainController {
                 .collect(Collectors.toList());
     }
 
+    @GetMapping("/api/stasklist")
+    @ResponseBody
+    public List<STaskDto> getSAllTaskList() {
+        List<Task> tasks = taskService.getAll();
+        return tasks.stream()
+                .map(task -> SMapToDto(task))    
+                .collect(Collectors.toList());
+    }
+
+    @PutMapping("/api/task/updateStage/{taskId}/{newStage}")
+    public ResponseEntity<?> updateTaskStage(@PathVariable int taskId, @PathVariable String newStage) {
+        try {
+            // Call the service method to update the task stage
+            System.out.println(taskId + newStage);
+            Task task = taskService.findById(taskId);
+            task.setStatus(newStage);
+            taskService.save(task);
+            return ResponseEntity.ok("Task stage updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error updating task stage");
+        }
+    }
+
     @PostMapping("/api/task/save")
     @ResponseBody
     public ResponseEntity<String> addTask(@RequestBody Task task) {
@@ -129,6 +155,15 @@ pusher.trigger("my-channel", "my-event", "{\"comment\":\"" + comment + "\"}");
         dto.setTitle(task.getTitle());
         dto.setBlock("Task");
         dto.setFooter("<i class=\"ion-md-chatboxes\"></i><div class=\"pull-right\"><i class=\"ion-md-checkbox\"></i> " + task.getDescription() + "</div>");
+        return dto;
+    }
+
+    private STaskDto SMapToDto(Task task) {
+        STaskDto dto = new STaskDto();
+        dto.setId(task.getId());
+        dto.setTitle(task.getTitle());
+        dto.setDescription(task.getDescription());
+        dto.setStage(task.getStatus());
         return dto;
     }
 }

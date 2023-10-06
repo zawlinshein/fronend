@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,11 +31,13 @@
             margin: 8px 0;
             cursor: grab;
         }
+
         .dragging {
             background-color: lightblue;
         }
     </style>
 </head>
+
 <body>
 
     <h1>Task Tracker</h1>
@@ -42,7 +45,7 @@
     <div class="container">
         <div class="section" id="todo-section" ondrop="drop(event)" ondragover="allowDrop(event)">
             <h2>To Do</h2>
-            
+
             <!-- Add more tasks as needed -->
         </div>
 
@@ -57,76 +60,147 @@
         </div>
     </div>
     <input type="text" id="taskNameInput" placeholder="Task Name">
-<input type="date" id="taskDueDateInput" placeholder="Due Date">
-<input type="date" id="taskStartDateInput" placeholder="Start Date">
+    <input type="date" id="taskDueDateInput" placeholder="Due Date">
+    <input type="date" id="taskStartDateInput" placeholder="Start Date">
     <input type="text" id="taskDescription" placeholder="description">
     <button onclick="addNewTask()">Add New Task</button>
-
+    <script th:src="@{jquery.min.js}"></script>
     <script>
+
+        let lastTaskId = 0;
+
+        $(document).ready(function () {
+            console.log("hhihih");
+            fetch(`/api/stasklist`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    organizeTasks(data);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+
+            function organizeTasks(tasks) {
+                tasks.forEach(task => {
+                    var newTask = createTaskElement(task);
+                    var sectionId;
+
+                    switch (task.stage) {
+                        case 'BEFORE':
+                            sectionId = 'todo-section';
+                            break;
+                        case 'START':
+                            sectionId = 'progress-section';
+                            break;
+                        case 'DONE':
+                            sectionId = 'done-section';
+                            break;
+                        default:
+                            console.log('Invalid stage:', task.stage);
+                            return;
+                    }
+
+                    var section = document.getElementById(sectionId);
+                    section.appendChild(newTask);
+                });
+            }
+
+            function createTaskElement(task) {
+                var newTask = document.createElement("div");
+                newTask.className = "task";
+                newTask.draggable = true;
+
+                newTask.id = `${task.id}`;
+                lastTaskId = task.id;
+
+                newTask.innerHTML = `
+                    <strong>Name:</strong> ${task.title} <br>
+                    <strong>Due Date:</strong> ${task.end} <br>
+                    <strong>Start Date:</strong> ${task.start} <br>
+                    <strong>Actual Hours:</strong> ${task.actual} hours
+                `;
+
+                newTask.setAttribute("ondragstart", "drag(event)");
+
+                return newTask;
+            }
+        });
+
+
+        // Initialize a global variable to keep track of the last task ID
+
 
         function addNewTask() {
             var taskDescription = document.getElementById("taskDescription").value;
             var taskName = document.getElementById("taskNameInput").value;
             var taskDueDate = document.getElementById("taskDueDateInput").value;
             var taskStartDate = document.getElementById("taskStartDateInput").value;
-        
+
             if (!taskName || !taskDueDate || !taskStartDate || !taskDescription) {
                 alert("Please fill in all fields");
                 return;
             }
-        
+
             var currentDate = new Date().toISOString().split('T')[0];
-        
+
             if (taskStartDate < currentDate) {
                 alert("Start date can't be earlier than the current date");
                 return;
             }
-        
+
             if (taskDueDate < currentDate || taskDueDate < taskStartDate) {
                 alert("Due date can't be earlier than the current date or start date");
                 return;
             }
-        
+
             var startDate = new Date(taskStartDate);
             var dueDate = new Date(taskDueDate);
             var totalDays = Math.floor((dueDate - startDate) / (24 * 60 * 60 * 1000)) + 1;
-            var actualHours = totalDays * 6; 
-        
+            var actualHours = totalDays * 6;
+
             for (var i = 0; i <= totalDays; i++) {
                 var currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + i);
-        
+
                 if (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
-                    actualHours -= 6; 
+                    actualHours -= 6;
                 }
             }
-        
+
             var taskObject = {
                 title: taskName,
-                description: taskDescription, 
+                description: taskDescription,
                 status: "BEFORE",
                 start: taskStartDate,
                 end: taskDueDate,
                 actual: actualHours,
-                expected: 0   
+                expected: 0
             };
-        
+
+            // Increase the last task ID
+            lastTaskId++;
+
+            // Add the ID to the taskObject
+            taskObject.id = lastTaskId;
+
             var newTask = document.createElement("div");
             newTask.className = "task";
             newTask.draggable = true;
-        
+
+            // Add an id attribute to the task element
+            newTask.id = `${lastTaskId}`;
+
             newTask.innerHTML = `
-                <strong>Name:</strong> ${taskObject.title} <br>
-                <strong>Due Date:</strong> ${taskObject.end} <br>
-                <strong>Start Date:</strong> ${taskObject.start} <br>
-                <strong>Actual Hours:</strong> ${taskObject.actual} hours
-            `;
-        
+        <strong>Name:</strong> ${taskObject.title} <br>
+        <strong>Due Date:</strong> ${taskObject.end} <br>
+        <strong>Start Date:</strong> ${taskObject.start} <br>
+        <strong>Actual Hours:</strong> ${taskObject.actual} hours
+    `;
+
             newTask.setAttribute("ondragstart", "drag(event)");
-        
+
             var todoSection = document.getElementById("todo-section");
             todoSection.appendChild(newTask);
-        
+
             fetch('/api/task/save', {
                 method: 'POST',
                 headers: {
@@ -134,14 +208,15 @@
                 },
                 body: JSON.stringify(taskObject),
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
         }
+
 
         function allowDrop(event) {
             event.preventDefault();
@@ -161,47 +236,101 @@
                 console.log("Could not find the closest section.");
             }
         }
-              
+
 
         function drop(event) {
             event.preventDefault();
             var data = event.dataTransfer.getData("text");
             var sourceId = event.dataTransfer.getData("sourceId");
             console.log("Source ID:", sourceId);
-
+        
             var draggedTask = document.querySelector(".dragging");
-
+        
             if (!draggedTask) {
                 console.log("Dragged task not found.");
                 return;
             }
-
+        
             var clonedTask = draggedTask.cloneNode(true);
-
+        
             clonedTask.classList.remove("dragging");
-
+        
             if (event.target.classList.contains("task")) {
                 var dropSection = event.target.closest(".section");
                 var dropIndex = Array.from(dropSection.children).indexOf(event.target);
-
+        
                 dropSection.insertBefore(clonedTask, dropIndex > -1 ? dropSection.children[dropIndex] : null);
-
+        
                 var sourceSection = document.getElementById(sourceId);
                 sourceSection.removeChild(draggedTask);
-
+        
+                // Get the task ID from the dragged task's ID attribute
+                var taskId = draggedTask.id;
+        
+                // Get the target section's ID
+                var targetSectionId = dropSection.id;
+        
+                // Call the function to update the task stage on the server
+                updateTaskStage(taskId, targetSectionId);
+        
                 return;
             }
-
+        
             if (event.target.classList.contains("section") && !event.target.classList.contains("title")) {
                 event.target.appendChild(clonedTask);
-
+        
                 var sourceSection = document.getElementById(sourceId);
                 sourceSection.removeChild(draggedTask);
+        
+                // Get the task ID from the dragged task's ID attribute
+                var taskId = draggedTask.id;
+        
+                // Get the target section's ID
+                var targetSectionId = event.target.id;
+        
+                // Call the function to update the task stage on the server
+                updateTaskStage(taskId, targetSectionId);
             }
         }
         
+        function updateTaskStage(taskId, targetSectionId) {
+            var newStage;
+        
+            switch (targetSectionId) {
+                case 'todo-section':
+                    newStage = 'BEFORE';
+                    break;
+                case 'progress-section':
+                    newStage = 'START';
+                    break;
+                case 'done-section':
+                    newStage = 'DONE';
+                    break;
+                default:
+                    console.log('Invalid target section:', targetSectionId);
+                    return;
+            }
+        
+            // Call your API to update the task stage on the server
+            fetch(`/api/task/updateStage/${taskId}/${newStage}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+        
+
 
     </script>
 
 </body>
+
 </html>

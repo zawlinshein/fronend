@@ -16,6 +16,10 @@ public class TaskService {
     public TaskService(TaskRepo taskRepo) {
         this.taskRepo = taskRepo;
     } 
+
+    public Task findById(int id) {
+        return taskRepo.findById(id).orElse(null);
+    }
     
     public void save(Task task) {
         taskRepo.save(task);
