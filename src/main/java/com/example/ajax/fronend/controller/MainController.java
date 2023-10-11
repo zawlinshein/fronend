@@ -105,7 +105,7 @@ public class MainController {
             Task task = taskService.findById(taskId);
             task.setStatus(newStage);
             taskService.save(task);
-            return ResponseEntity.ok("Task stage updated successfully");
+            return ResponseEntity.ok("{\"message\": \"Task stage updated successfully\"}");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error updating task stage");
         }
@@ -118,7 +118,7 @@ public class MainController {
         // You may want to return a success or error message
         System.out.println(task);
         taskService.save(task);
-        return ResponseEntity.ok("Task added successfully");
+        return ResponseEntity.ok("{\"message\": \"Task stage updated successfully\"}");
     }
 
     @GetMapping("/draganddrop")
@@ -128,7 +128,7 @@ public class MainController {
 
     @PostMapping("/livecomment")
     @ResponseBody
-    public String comment(@RequestBody Map<String, String> requestBody) {
+    public String comment(@RequestBody Map<String, String> requestBody) throws Exception {
 
         String comment = requestBody.get("comment");
 
@@ -145,9 +145,14 @@ pusher.setEncrypted(true);
 
 // pusher.trigger("my-channel", "my-event", Collections.singletonMap("message", "hello world"));
 pusher.trigger("my-channel", "my-event", "{\"comment\":\"" + comment + "\"}");
-
+        pusher.close();
         return "hi guys";
     } 
+
+    @GetMapping("/noti")
+    public String noti() {
+        return "noti";
+    }
 
     private TaskDto mapToDTO(Task task) {
         TaskDto dto = new TaskDto();

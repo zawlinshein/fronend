@@ -81,8 +81,8 @@
 
             function organizeTasks(tasks) {
                 tasks.forEach(task => {
-                    var newTask = createTaskElement(task);
-                    var sectionId;
+                    let newTask = createTaskElement(task);
+                    let sectionId;
 
                     switch (task.stage) {
                         case 'BEFORE':
@@ -99,13 +99,13 @@
                             return;
                     }
 
-                    var section = document.getElementById(sectionId);
+                    let section = document.getElementById(sectionId);
                     section.appendChild(newTask);
                 });
             }
 
             function createTaskElement(task) {
-                var newTask = document.createElement("div");
+                let newTask = document.createElement("div");
                 newTask.className = "task";
                 newTask.draggable = true;
 
@@ -114,9 +114,7 @@
 
                 newTask.innerHTML = `
                     <strong>Name:</strong> ${task.title} <br>
-                    <strong>Due Date:</strong> ${task.end} <br>
-                    <strong>Start Date:</strong> ${task.start} <br>
-                    <strong>Actual Hours:</strong> ${task.actual} hours
+                    <strong>Description:</strong> ${task.description} <br>
                 `;
 
                 newTask.setAttribute("ondragstart", "drag(event)");
@@ -126,21 +124,21 @@
         });
 
 
-        // Initialize a global variable to keep track of the last task ID
+        // Initialize a global letiable to keep track of the last task ID
 
 
         function addNewTask() {
-            var taskDescription = document.getElementById("taskDescription").value;
-            var taskName = document.getElementById("taskNameInput").value;
-            var taskDueDate = document.getElementById("taskDueDateInput").value;
-            var taskStartDate = document.getElementById("taskStartDateInput").value;
+            let taskDescription = document.getElementById("taskDescription").value;
+            let taskName = document.getElementById("taskNameInput").value;
+            let taskDueDate = document.getElementById("taskDueDateInput").value;
+            let taskStartDate = document.getElementById("taskStartDateInput").value;
 
             if (!taskName || !taskDueDate || !taskStartDate || !taskDescription) {
                 alert("Please fill in all fields");
                 return;
             }
 
-            var currentDate = new Date().toISOString().split('T')[0];
+            let currentDate = new Date().toISOString().split('T')[0];
 
             if (taskStartDate < currentDate) {
                 alert("Start date can't be earlier than the current date");
@@ -152,13 +150,13 @@
                 return;
             }
 
-            var startDate = new Date(taskStartDate);
-            var dueDate = new Date(taskDueDate);
-            var totalDays = Math.floor((dueDate - startDate) / (24 * 60 * 60 * 1000)) + 1;
-            var actualHours = totalDays * 6;
+            let startDate = new Date(taskStartDate);
+            let dueDate = new Date(taskDueDate);
+            let totalDays = Math.floor((dueDate - startDate) / (24 * 60 * 60 * 1000)) + 1;
+            let actualHours = totalDays * 6;
 
-            for (var i = 0; i <= totalDays; i++) {
-                var currentDate = new Date(startDate);
+            for (let i = 0; i <= totalDays; i++) {
+                let currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + i);
 
                 if (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
@@ -166,7 +164,7 @@
                 }
             }
 
-            var taskObject = {
+            let taskObject = {
                 title: taskName,
                 description: taskDescription,
                 status: "BEFORE",
@@ -182,7 +180,7 @@
             // Add the ID to the taskObject
             taskObject.id = lastTaskId;
 
-            var newTask = document.createElement("div");
+            let newTask = document.createElement("div");
             newTask.className = "task";
             newTask.draggable = true;
 
@@ -191,14 +189,12 @@
 
             newTask.innerHTML = `
         <strong>Name:</strong> ${taskObject.title} <br>
-        <strong>Due Date:</strong> ${taskObject.end} <br>
-        <strong>Start Date:</strong> ${taskObject.start} <br>
-        <strong>Actual Hours:</strong> ${taskObject.actual} hours
+        <strong>Description:</strong> ${taskObject.description} <br>
     `;
 
             newTask.setAttribute("ondragstart", "drag(event)");
 
-            var todoSection = document.getElementById("todo-section");
+            let todoSection = document.getElementById("todo-section");
             todoSection.appendChild(newTask);
 
             fetch('/api/task/save', {
@@ -223,10 +219,10 @@
         }
 
         function drag(event) {
-            var sourceSection = event.target.closest('.section');
+            let sourceSection = event.target.closest('.section');
 
             if (sourceSection) {
-                var sourceId = sourceSection.id;
+                let sourceId = sourceSection.id;
                 event.dataTransfer.setData("text", event.target.innerText);
                 event.dataTransfer.setData("sourceId", sourceId);
                 event.dataTransfer.setData("draggedElement", event.target.outerHTML);
@@ -240,35 +236,44 @@
 
         function drop(event) {
             event.preventDefault();
-            var data = event.dataTransfer.getData("text");
-            var sourceId = event.dataTransfer.getData("sourceId");
+            let data = event.dataTransfer.getData("text");
+            let sourceId = event.dataTransfer.getData("sourceId");
+            console.log(data)
             console.log("Source ID:", sourceId);
         
-            var draggedTask = document.querySelector(".dragging");
+            let draggedTask = document.querySelector(".dragging");
+            console.log(draggedTask)
         
             if (!draggedTask) {
                 console.log("Dragged task not found.");
                 return;
             }
         
-            var clonedTask = draggedTask.cloneNode(true);
-        
-            clonedTask.classList.remove("dragging");
-        
             if (event.target.classList.contains("task")) {
-                var dropSection = event.target.closest(".section");
-                var dropIndex = Array.from(dropSection.children).indexOf(event.target);
+                let dropSection = event.target.closest(".section");
+                let dropIndex = Array.from(dropSection.children).indexOf(event.target);
+        
+                let clonedTask = draggedTask.cloneNode(true);
+                clonedTask.classList.remove("dragging");
         
                 dropSection.insertBefore(clonedTask, dropIndex > -1 ? dropSection.children[dropIndex] : null);
         
-                var sourceSection = document.getElementById(sourceId);
-                sourceSection.removeChild(draggedTask);
+                let sourceSection = document.getElementById(sourceId);
+
+                console.log(dropSection)
+                console.log(dropIndex)
+                console.log(clonedTask)
+                console.log(sourceSection)
         
-                // Get the task ID from the dragged task's ID attribute
-                var taskId = draggedTask.id;
+                if (sourceSection.contains(draggedTask)) {
+                    sourceSection.removeChild(draggedTask);
+                }
+        
+                // Get the task ID from the original dragged task's ID attribute
+                let taskId = draggedTask.id;
         
                 // Get the target section's ID
-                var targetSectionId = dropSection.id;
+                let targetSectionId = dropSection.id;
         
                 // Call the function to update the task stage on the server
                 updateTaskStage(taskId, targetSectionId);
@@ -277,24 +282,31 @@
             }
         
             if (event.target.classList.contains("section") && !event.target.classList.contains("title")) {
+                let clonedTask = draggedTask.cloneNode(true);
+                clonedTask.classList.remove("dragging");
+        
                 event.target.appendChild(clonedTask);
         
-                var sourceSection = document.getElementById(sourceId);
-                sourceSection.removeChild(draggedTask);
+                let sourceSection = document.getElementById(sourceId);
         
-                // Get the task ID from the dragged task's ID attribute
-                var taskId = draggedTask.id;
+                if (sourceSection.contains(draggedTask)) {
+                    sourceSection.removeChild(draggedTask);
+                }
+        
+                // Get the task ID from the original dragged task's ID attribute
+                let taskId = draggedTask.id;
         
                 // Get the target section's ID
-                var targetSectionId = event.target.id;
+                let targetSectionId = event.target.id;
         
                 // Call the function to update the task stage on the server
                 updateTaskStage(taskId, targetSectionId);
             }
         }
         
+        
         function updateTaskStage(taskId, targetSectionId) {
-            var newStage;
+            let newStage;
         
             switch (targetSectionId) {
                 case 'todo-section':
@@ -321,9 +333,6 @@
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
-            })
-            .catch((error) => {
-                console.error('Error:', error);
             });
         }
         
